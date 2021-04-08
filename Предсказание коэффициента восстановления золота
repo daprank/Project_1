@@ -1,0 +1,631 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Создание прототипа модели машинного обучения, предсказывающей коэффициент восстановления золота из золотосодержащей руды, для конмании \"Цифра\"\n",
+    "В этой работе мы выберем наилучшую модель машинного обучения, которая предсказывает коэффициент восстановления золота из золотосодержащей руды.\n",
+    "# Содержание\n",
+    "## [Проверка расчтера rougher.output.recovery](#step_1)\n",
+    "### [Комментарий](#step_2)\n",
+    "## [Выделение признаков](#step_3)\n",
+    "### [Комментарий](#step_4)\n",
+    "## [Изменение концентрации веществ на этапах](#step_5)\n",
+    "### [Выводы](#step_6)\n",
+    "## [Распределение размера гранул на тестовой и обучающей выборках](#step_7)\n",
+    "### [Выводы](#step_8)\n",
+    "## [Изучение нулевых знчений](#step_9)\n",
+    "### [Обзор результатов](#step_10)\n",
+    "## [Обучение моделей](#step_11)\n",
+    "### [Модели для final](#step_11)\n",
+    "#### [Промежуточные результаты](#step_12)\n",
+    "### [Модели для rougher](#step_13)\n",
+    "#### [Промежуточные результаты](#step_14)\n",
+    "## [Проверка моделей на тестовой выборке](#step_15)\n",
+    "### [Результаты](#step_16)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.metrics import mean_absolute_error as mae\n",
+    "from sklearn.model_selection import cross_val_score\n",
+    "from sklearn.tree import DecisionTreeRegressor\n",
+    "from sklearn.linear_model import LinearRegression\n",
+    "from sklearn.ensemble import RandomForestRegressor\n",
+    "from sklearn.metrics import make_scorer\n",
+    "from sklearn.model_selection import RandomizedSearchCV\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "from matplotlib.patches import Rectangle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "FileNotFoundError",
+     "evalue": "[Errno 2] No such file or directory: '/datasets/gold_recovery_full.csv'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-6-38e8ea0df467>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m     \u001b[0mfull_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34mr'C:\\Users\\Семен\\Downloads\\gold_recovery_full.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m     \u001b[0mtrain_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34mr'C:\\Users\\Семен\\Downloads\\gold_recovery_train.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, squeeze, prefix, mangle_dupe_cols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, dialect, error_bad_lines, warn_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options)\u001b[0m\n\u001b[1;32m    609\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 610\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    611\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    461\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 462\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    463\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m    818\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 819\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    820\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, engine)\u001b[0m\n\u001b[1;32m   1049\u001b[0m         \u001b[0;31m# error: Too many arguments for \"ParserBase\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1050\u001b[0;31m         \u001b[0;32mreturn\u001b[0m \u001b[0mmapping\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0moptions\u001b[0m\u001b[0;34m)\u001b[0m  \u001b[0;31m# type: ignore[call-arg]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1051\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, src, **kwds)\u001b[0m\n\u001b[1;32m   1866\u001b[0m         \u001b[0;31m# open handles\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1867\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_open_handles\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0msrc\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1868\u001b[0m         \u001b[0;32massert\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m \u001b[0;32mis\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_open_handles\u001b[0;34m(self, src, kwds)\u001b[0m\n\u001b[1;32m   1367\u001b[0m             \u001b[0mmemory_map\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"memory_map\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mFalse\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1368\u001b[0;31m             \u001b[0mstorage_options\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"storage_options\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1369\u001b[0m         )\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    646\u001b[0m                 \u001b[0merrors\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0merrors\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 647\u001b[0;31m                 \u001b[0mnewline\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m\"\"\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    648\u001b[0m             )\n",
+      "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Семен\\\\Downloads\\\\gold_recovery_full.csv'",
+      "\nDuring handling of the above exception, another exception occurred:\n",
+      "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-6-38e8ea0df467>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[1;32m      4\u001b[0m     \u001b[0mtest_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34mr'C:\\Users\\Семен\\Downloads\\gold_recovery_test.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;32mexcept\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 6\u001b[0;31m     \u001b[0mfull_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'/datasets/gold_recovery_full.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      7\u001b[0m     \u001b[0mtrain_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'/datasets/gold_recovery_train.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      8\u001b[0m     \u001b[0mtest_df\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'/datasets/gold_recovery_test.csv'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, squeeze, prefix, mangle_dupe_cols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, dialect, error_bad_lines, warn_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options)\u001b[0m\n\u001b[1;32m    608\u001b[0m     \u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkwds_defaults\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    609\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 610\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    611\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    612\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    460\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    461\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 462\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    463\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    464\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mchunksize\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0miterator\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m    817\u001b[0m             \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0moptions\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m\"has_index_names\"\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m\"has_index_names\"\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    818\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 819\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    820\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    821\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mclose\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, engine)\u001b[0m\n\u001b[1;32m   1048\u001b[0m             )\n\u001b[1;32m   1049\u001b[0m         \u001b[0;31m# error: Too many arguments for \"ParserBase\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1050\u001b[0;31m         \u001b[0;32mreturn\u001b[0m \u001b[0mmapping\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0moptions\u001b[0m\u001b[0;34m)\u001b[0m  \u001b[0;31m# type: ignore[call-arg]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1051\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1052\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m_failover_to_python\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, src, **kwds)\u001b[0m\n\u001b[1;32m   1865\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1866\u001b[0m         \u001b[0;31m# open handles\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1867\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_open_handles\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0msrc\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1868\u001b[0m         \u001b[0;32massert\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m \u001b[0;32mis\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1869\u001b[0m         \u001b[0;32mfor\u001b[0m \u001b[0mkey\u001b[0m \u001b[0;32min\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0;34m\"storage_options\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m\"encoding\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m\"memory_map\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m\"compression\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/parsers.py\u001b[0m in \u001b[0;36m_open_handles\u001b[0;34m(self, src, kwds)\u001b[0m\n\u001b[1;32m   1366\u001b[0m             \u001b[0mcompression\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"compression\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1367\u001b[0m             \u001b[0mmemory_map\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"memory_map\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mFalse\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1368\u001b[0;31m             \u001b[0mstorage_options\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"storage_options\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1369\u001b[0m         )\n\u001b[1;32m   1370\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/opt/anaconda3/envs/tf/lib/python3.7/site-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    645\u001b[0m                 \u001b[0mencoding\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mencoding\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    646\u001b[0m                 \u001b[0merrors\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0merrors\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 647\u001b[0;31m                 \u001b[0mnewline\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m\"\"\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    648\u001b[0m             )\n\u001b[1;32m    649\u001b[0m         \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: '/datasets/gold_recovery_full.csv'"
+     ]
+    }
+   ],
+   "source": [
+    "try:\n",
+    "    full_df = pd.read_csv(r'C:\\Users\\Семен\\Downloads\\gold_recovery_full.csv')\n",
+    "    train_df = pd.read_csv(r'C:\\Users\\Семен\\Downloads\\gold_recovery_train.csv')\n",
+    "    test_df = pd.read_csv(r'C:\\Users\\Семен\\Downloads\\gold_recovery_test.csv')\n",
+    "except:\n",
+    "    full_df = pd.read_csv('/datasets/gold_recovery_full.csv')\n",
+    "    train_df = pd.read_csv('/datasets/gold_recovery_train.csv')\n",
+    "    test_df = pd.read_csv('/datasets/gold_recovery_test.csv')\n",
+    "train_df.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Проверка расчета rougher.output.recovery\n",
+    "<a id='step_1'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def drop(df, column, inplace):\n",
+    "    df.drop(train_df[train_df[column].isna()].index, inplace = inplace)\n",
+    "def show(df, head = 5, print_ = False):\n",
+    "    display(df.head(head))\n",
+    "    if print_: print(df.info())\n",
+    "def recovery(row):\n",
+    "    c = row['rougher.output.concentrate_au']\n",
+    "    f = row['rougher.input.feed_au']\n",
+    "    t = row['rougher.output.tail_au']\n",
+    "    try:\n",
+    "        au_recovery = (c*(f-t)) / (f*(c-t)) * 100\n",
+    "    except:\n",
+    "        au_recovery = np.nan\n",
+    "    return au_recovery\n",
+    "def fill(df):\n",
+    "    for column in df.columns:\n",
+    "        if df[column].isna().sum() > 0:\n",
+    "            df[column].fillna(method = 'ffill', inplace = True)\n",
+    "    return df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "drop(train_df, 'final.output.recovery', inplace = True)\n",
+    "drop(train_df, 'rougher.output.recovery', inplace = True)\n",
+    "\n",
+    "drop(full_df, 'final.output.recovery', inplace = True)\n",
+    "drop(full_df, 'rougher.output.recovery', inplace = True)\n",
+    "\n",
+    "train_df = fill(train_df)\n",
+    "full_df = fill(full_df)\n",
+    "test_df = fill(test_df)\n",
+    "train_df['recovery_calculated'] = train_df.apply(recovery, axis = 1)\n",
+    "print('MAE между рассчетным и данным значениями recovery равна ', mae(train_df['rougher.output.recovery'], train_df['recovery_calculated']))\n",
+    "train_df.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Выводы и комментарии\n",
+    "<a id='step_2'></a>\n",
+    "Итак, полет нормальный MAE близка к 0. Не равна, скорее всего, из-за округлений, но -15 степень - это ерундовое значение.\n",
+    "Шаги:\n",
+    "- Удалили все пропущенные значения из наших будущих таргетов. Оставить их или заполнить значит в будущем учить модель неправильно. Потеряли порядка 10%, что конечно плохо, но лучше, чем trash-in-trash-out.\n",
+    "- Пропуски в остальных столбцах заполнили методом 'ffill'.\n",
+    "- Рассчитали коэффициент восставновления после флотации."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Выделение faetures \n",
+    "<a id='step_3'></a>\n",
+    "Необходимо рассмотреть столбцы `train_df`, недоступные в `test_df`. Это позволит нам выделить features для последующего обучения моделей."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "display(train_df.drop(pd.Series(test_df.columns), axis = 1).columns)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Комментарии\n",
+    "<a id='step_4'></a>\n",
+    "1. Первое, что бросается в глааза, - output-ы. Вполне логично, что во вводных данных могут быть только input-ы (концентрации металлов, отвальные хвосты). На то они и вводные :)\n",
+    "2. Также, нет части рассчитываемых признаков с пометкой `calculation`. \n",
+    "Итак, в `features` идут все названия столбцов из тестовой выборки, а в `target` пойдут `rougher.output.recovery` и `final.output.recovery`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "features_names = test_df.columns\n",
+    "target_names = ['rougher.output.recovery', 'final.output.recovery']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Анализ изменения концентрации веществ на различных этапах\n",
+    "<a id='step_5'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def concentration(df, metal):\n",
+    "    a = df['rougher.input.feed_' + metal]\n",
+    "    b = df['rougher.output.concentrate_' + metal]\n",
+    "    c = df['primary_cleaner.output.concentrate_' + metal]\n",
+    "    d = df['final.output.concentrate_' + metal]\n",
+    "    fig = plt.figure()\n",
+    "    labels= ['Сырье','После флотации', 'После 1 очистки', 'Финальный концентрат']\n",
+    "    ax = fig.add_subplot(111)\n",
+    "    ax.hist(a, alpha = 0.6, bins = 15)\n",
+    "    ax.hist(b, alpha = 0.6, bins = 15)\n",
+    "    ax.hist(c, alpha = 0.6, bins = 15)\n",
+    "    ax.hist(d, alpha = 0.6, bins = 15)\n",
+    "    ax.legend(labels)\n",
+    "    ax.set(title = metal)\n",
+    "    plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "concentration(full_df, 'au')\n",
+    "concentration(full_df, 'ag')\n",
+    "concentration(full_df, 'pb')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Результаты анализа\n",
+    "<a id='step_6'></a>\n",
+    "1. Интересно, что на всех этапах есть наблюдения с нулевой концентрацией. Разберемся с этой аномалией позднее.\n",
+    "1. Концентрация золота, как и предполагалось, увеличивается с самыми большими темпами: разница между этапами существенна, изменение распределений концентрации отчетливо видно.\n",
+    "2. Концентрация серебра в результате очистки уменьшается. Однако после флотации увеличивается. Видимо, имеет место специфика воздействия различных этапов обработки руды на серебро.\n",
+    "3. Концентрация свинца увеличивается, но не критически: заметный рост после флотации, а очистка дает лишь небольшой рост. Опять же, специфика технологического процесса."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "##  Анализ распределений размера гранул на тестовой и обучающей выборке\n",
+    "<a id='step_7'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "train_df['rougher.input.feed_size'].plot.kde()\n",
+    "test_df['rougher.input.feed_size'].plot.kde()\n",
+    "plt.legend(['Обучающая', 'Тестовая'])\n",
+    "plt.ylabel('Распределение')\n",
+    "plt.title('Сравнение распределений размера гранул на тестовой и обучающей выборках')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Вывод\n",
+    "<a id='step_8'></a>\n",
+    "Как видим, распределения приблизительно одинаковые, то есть входные данные тестовой и обучающей выборок, скажем, \"однородны\". Поэтому можем предполагать, что обучение имеет смысл."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Изучение аномальных значений\n",
+    "<a id='step_9'></a>\n",
+    "На самом деле, мы уже раньше могли обращать внимание на наличие \"нулевых строк\". Посмотрим на них внимательнее."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def sum_concentrations(row):\n",
+    "    things = ['pb', 'au', 'ag', 'sol']\n",
+    "    stages = ['rougher.input.feed_', 'rougher.output.concentrate_', 'primary_cleaner.output.concentrate_', 'final.output.concentrate_']\n",
+    "    sums = pd.DataFrame()\n",
+    "    for stage in stages:\n",
+    "        concent_sum = 0\n",
+    "        for thing in things:\n",
+    "            concent_sum += row[stage + thing]\n",
+    "        sums[str(stage)] = concent_sum\n",
+    "    return sums"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "train_df = train_df.merge(sum_concentrations(train_df), right_index = True, left_index = True)\n",
+    "test_df['rougher.input.feed_'] = test_df['rougher.input.feed_au'] + test_df['rougher.input.feed_ag'] + test_df['rougher.input.feed_pb'] + test_df['rougher.input.feed_sol']\n",
+    "\n",
+    "stages = ['rougher.input.feed_', 'rougher.output.concentrate_', 'primary_cleaner.output.concentrate_', 'final.output.concentrate_']\n",
+    "threshold = 0.3\n",
+    "\n",
+    "for stage in stages:\n",
+    "    print('Для тестовой выборки на этапе', stage, 'с пороговым значением', threshold, 'аномальных значений:', train_df[train_df[stage] < threshold]['date'].count())\n",
+    "    train_df.drop(train_df[train_df[stage] < threshold].index, inplace = True)\n",
+    "    print('Удаляем!')\n",
+    "\n",
+    "print('Для тестовой выборки на этапе флотации с пороговым значением', threshold, 'аномальных значений:', test_df[test_df['rougher.input.feed_'] < threshold]['date'].count())\n",
+    "test_df.drop(test_df[test_df['rougher.input.feed_'] < threshold].index, inplace = True)\n",
+    "print('Удаляем!')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Результаты\n",
+    "<a id='step_10'></a>\n",
+    "Итак, мы обнаружили эти \"нулевые аномалии\" и в тестовом, и в обучающем датасетах. Вероятно, их природа кроется в технических сбоях оборудования. Вряд ли получится выявить какую-то полезную информацию из них, поэтому решили все удалить."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Обучение моделей\n",
+    "### Модель для предсказания final.output.recovery\n",
+    "<a id='step_11'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def scorer(target, predictions):\n",
+    "    score = abs(predictions - target) / (0.5 * (abs(target) + abs(predictions)))\n",
+    "    return score.mean() * 100\n",
+    "my_scorer = make_scorer(scorer, greater_is_better = False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# СОЗДАНИЕ ПУСТЫХ МОДЕЛЕЙ И КЛАССОВ СЛУЧАЙНОГО ПОИСКА\n",
+    "tree_final = DecisionTreeRegressor(random_state = 12345)\n",
+    "forest_final = RandomForestRegressor(random_state = 12345)\n",
+    "best_lreg_final = LinearRegression(normalize = False)\n",
+    "tree_grid_final = {'max_depth': range(1, 10)}\n",
+    "forest_grid_final = {'max_depth': range(1, 10), 'n_estimators': range(1, 100, 10)}\n",
+    "best_tree_final = RandomizedSearchCV(tree_final, n_jobs = -1, n_iter = 9, param_distributions = tree_grid_final, random_state = 12345, scoring = my_scorer, cv = 5)\n",
+    "best_forest_final = RandomizedSearchCV(forest_final, n_jobs = -1, n_iter = 9, param_distributions = forest_grid_final, random_state = 12345, scoring = my_scorer, cv = 5)\n",
+    "\n",
+    "# ПОДГОТОВКА ПРЗНАКОВ, ВЫДЕЛЕНИЕ ЦЕЛЕВЫХ ХАРАКТЕРИСТИК\n",
+    "features_train_final = train_df[features_names].drop('date', axis = 1)\n",
+    "target_train_final = train_df['final.output.recovery']\n",
+    "scaler_final = StandardScaler()\n",
+    "features_train_final_scaled = scaler_final.fit_transform(features_train_final)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tree_score_final = cross_val_score(best_tree_final, features_train_final, target_train_final, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для решающего дерева равно', abs(tree_score_final).mean())\n",
+    "lreg_score_final = cross_val_score(best_lreg_final, features_train_final_scaled, target_train_final, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для линейной регерссии равно', abs(lreg_score_final).mean())\n",
+    "forest_score_final = cross_val_score(best_forest_final, features_train_final, target_train_final, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для случайного леса равно', abs(forest_score_final).mean())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# ОБУЧЕНИЕ МОДЕЛЕЙ И ПОЛУЧЕНИЕ ГИПЕРПАРАМЕТРОВ\n",
+    "best_tree_final.fit(features_train_final, target_train_final)\n",
+    "print('Гиперпараметры решающего дерева:', best_tree_final.best_params_)\n",
+    "\n",
+    "best_forest_final.fit(features_train_final, target_train_final)\n",
+    "print('Гиперпараметры случайного леса:', best_forest_final.best_params_)\n",
+    "\n",
+    "best_lreg_final.fit(features_train_final_scaled, target_train_final)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Промежуточные результаты\n",
+    "<a id='step_12'></a>\n",
+    "Итак, мы получили три модели машинного обучения. \n",
+    "1. Для подбора гиперпараметров использовалась модель случайного поиска RandomizedSearchCV\n",
+    "2. Чтобы оценить результаты ее работы, мы воспользовались кросс-валидацией, обратившись к cross_val_score.\n",
+    "3. Лучшую оценку получила модель случайного леса (10.93) с гиперпараметрами `n_estimators = 91` и `max_depth = 4`\n",
+    "4. Решающее дерево отстало совсем немного, а вот линейная регресиия значительно \"сдает\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "###  Модель для предсказания rougher.output.recovery\n",
+    "<a id='step_13'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# СОЗДАНИЕ ПУСТЫХ МОДЕЛЕЙ И КЛАССОВ СЛУЧАЙНОГО ПОИСКА\n",
+    "tree_rougher = DecisionTreeRegressor(random_state = 12345)\n",
+    "forest_rougher = RandomForestRegressor(random_state = 12345)\n",
+    "best_lreg_rougher = LinearRegression(normalize = False)\n",
+    "tree_grid_rougher = {'max_depth': range(1, 10)}\n",
+    "forest_grid_rougher = {'max_depth': range(1, 10), 'n_estimators': range(1, 100, 10)}\n",
+    "best_tree_rougher = RandomizedSearchCV(tree_rougher, n_jobs = -1, n_iter = 9, param_distributions = tree_grid_rougher, random_state = 12345, scoring = my_scorer, cv = 5)\n",
+    "best_forest_rougher = RandomizedSearchCV(forest_rougher, n_jobs = -1, n_iter = 9, param_distributions = forest_grid_rougher, random_state = 12345, scoring = my_scorer, cv = 5)\n",
+    "\n",
+    "# ПОДГОТОВКА ПРЗНАКОВ, ВЫДЕЛЕНИЕ ЦЕЛЕВЫХ ХАРАКТЕРИСТИК\n",
+    "features_names_rougher = []\n",
+    "for column in test_df.columns:\n",
+    "    if 'rougher.input' in column:\n",
+    "        features_names_rougher.append(column)\n",
+    "    elif 'rougher.state' in column:\n",
+    "        features_names_rougher.append(column)\n",
+    "\n",
+    "features_names_rougher.remove('rougher.input.feed_')\n",
+    "features_train_rougher = train_df[features_names_rougher]\n",
+    "target_train_rougher = train_df['rougher.output.recovery']\n",
+    "\n",
+    "scaler_rougher = StandardScaler()\n",
+    "features_train_rougher_scaled = scaler_rougher.fit_transform(features_train_rougher)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tree_score_rougher = cross_val_score(best_tree_rougher, features_train_rougher, target_train_rougher, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для решающего дерева равно', abs(tree_score_rougher).mean())\n",
+    "lreg_score_rougher = cross_val_score(best_lreg_rougher, features_train_rougher_scaled, target_train_rougher, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для линейной регерссии равно', abs(lreg_score_rougher).mean())\n",
+    "forest_score_rougher = cross_val_score(best_forest_rougher, features_train_rougher, target_train_rougher, cv = 3, scoring = my_scorer, n_jobs = -1)\n",
+    "print('Среднее значение sMAPE для случайного леса равно', abs(forest_score_rougher).mean())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#ОБУЧЕНИЕ МОДЕЛЕЙ\n",
+    "best_tree_rougher.fit(features_train_rougher, target_train_rougher)\n",
+    "print('Гиперпараметры решающего дерева:', best_tree_rougher.best_params_)\n",
+    "best_forest_rougher.fit(features_train_rougher, target_train_rougher)\n",
+    "print('Гиперпараметры случайного леса:', best_forest_rougher.best_params_)\n",
+    "best_lreg_rougher.fit(features_train_rougher_scaled, target_train_rougher)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Промежуточные результаты\n",
+    "<a id='step_14'></a>\n",
+    "Мы снова получили три модели машинного обучения, которые в этот раз предсказывают значение `rougher.output.recovery`. \n",
+    "1. Лучшую оценку получила модель случайного леса (8.4) с гиперпараметрами `n_estimators = 21` и `max_depth = 7`\n",
+    "2. На самом деле, и линейная регрессия, и решающее дерево отстают незначительно\n",
+    "Что же, пришло время проверить все наши модели на тестовой выборке."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Проверка моделей на тестовой выборке\n",
+    "<a id='step_15'></a>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# ПЕРЕНЕСЕНИЕ ЦЕЛЕВЫХ ПРИЗНАКОВ В ТЕСТОВУЮ ВЫБОРКУ\n",
+    "dates = list(test_df['date'])\n",
+    "target_test = full_df.query('date in @dates')[['date', 'rougher.output.recovery', 'final.output.recovery']]\n",
+    "test_df = test_df.merge(target_test, on = 'date')\n",
+    "# РАЗБИЕНИЕ И СТАНДАРТИЗАЦИЯ\n",
+    "target_test_final = test_df['final.output.recovery']\n",
+    "features_test_final = test_df[features_names].drop('date', axis = 1)\n",
+    "features_test_scaled_final = scaler_final.transform(features_test_final)\n",
+    "\n",
+    "target_test_rougher = test_df['rougher.output.recovery']\n",
+    "features_test_rougher = test_df[features_names_rougher]\n",
+    "features_test_scaled_rougher = scaler_rougher.transform(features_test_rougher)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def smape(estimator_final, estimator_rougher, features_final, features_rougher, target_final, target_rougher):\n",
+    "    predictions_final = estimator_final.predict(features_final)\n",
+    "    predictions_rougher = estimator_rougher.predict(features_rougher)\n",
+    "    smape_rougher = scorer(target_rougher, predictions_rougher)\n",
+    "    smape_final = scorer(target_final, predictions_final)\n",
+    "    result = 0.75 * smape_final + 0.25 * smape_rougher\n",
+    "    return result    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "result_tree = smape(best_tree_final, best_tree_rougher, features_test_final, features_test_rougher, target_test_final, target_test_rougher)\n",
+    "result_forest = smape(best_forest_final, best_forest_rougher, features_test_final, features_test_rougher, target_test_final, target_test_rougher)\n",
+    "result_lreg = smape(best_lreg_final, best_lreg_rougher, features_test_scaled_final, features_test_scaled_rougher, target_test_final, target_test_rougher)\n",
+    "print('Итоговый sMAPE решающего дерева равен', result_tree)\n",
+    "print('Итоговый sMAPE случайного леса равен', result_forest)\n",
+    "print('Итоговый sMAPE линейной регресии равен', result_lreg)\n",
+    "\n",
+    "median_final = target_train_final.median()\n",
+    "median_rougher = target_train_rougher.median()\n",
+    "median_predictions_final = pd.Series(data = median_final, index = features_test_final.index)\n",
+    "median_predictions_rougher = pd.Series(data = median_rougher, index = features_test_rougher.index)\n",
+    "result_median = scorer(target_test_final, median_predictions_final) * 0.75 + scorer(target_test_rougher, median_predictions_rougher)*0.25\n",
+    "print('Итоговый sMAPE медианного предсказания равен', result_median)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Результат\n",
+    "<a id='step_16'></a>\n",
+    "Сначала кратко опишем, что мы сделали на последнем этапе.\n",
+    "1. \"Подтянули\" target-ы из полного датасета\n",
+    "2. Стандартизировали их features с помощью модели StandardScaler, ранее обученной на тренировочном датасете\n",
+    "3. Написали функцию для расчета итогового sMAPE\n",
+    "4. Посчитали все показатели\n",
+    "5. Для оценки адекватности сравнили с медианным предсказанием \n",
+    "\n",
+    "И что же в итоге?\n",
+    "\n",
+    "Ура, две модели прошли проверку на адекватность проверку адекватность: решающий лес и линейная регрессия. Притом именно линейная регрессия стала лучшей!\n",
+    "\n",
+    "Если быть до конца откровенными, мы должны признать, что все различия незначительны и, если датасет будет немного отличаться, то результат может измениться в плоть до \"неадекватности\" всех моделей. Уже сейчас можно сказать, что медианная модель может быть выбрана в качестве лучшей, как минимум, по скорости работы. Возможно, это связано с недостаточно \"чистыми\" данными. Или недостаточным их объемом. В любом случае, дело в данных, поэтому нужно покопаться в способах их сбора."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.10"
+  },
+  "toc": {
+   "base_numbering": 1,
+   "nav_menu": {},
+   "number_sections": true,
+   "sideBar": true,
+   "skip_h1_title": false,
+   "title_cell": "Table of Contents",
+   "title_sidebar": "Contents",
+   "toc_cell": false,
+   "toc_position": {},
+   "toc_section_display": true,
+   "toc_window_display": true
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
